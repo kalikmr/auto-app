@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoRide</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{
+  background:#0b0b0b;
+  color:white;
+}
+/* NAV */
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 20px;
+  flex-wrap:wrap;
+}
+.logo{font-size:20px;font-weight:600;}
+.nav-buttons{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.nav-buttons button{
+  padding:8px 14px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  font-size:12px;
+}
+.user-btn{background:#00ffae;color:black;}
+.admin-btn{background:#222;color:white;}
+.driver-btn{background:#333;color:white;}
+/* HERO */
+.hero{
+  text-align:center;
+  padding:60px 15px;
+}
+
+.hero h1{
+  font-size:40px;
+}
+
+.hero span{color:#00ffae;}
+
+.hero p{
+  margin-top:10px;
+  opacity:0.6;
+  font-size:14px;
+}
+
+/* SEARCH */
+.search{
+  width:90%;
+  max-width:500px;
+  margin:20px auto;
+}
+
+.search input{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:10px;
+}
+
+.search button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:25px;
+  background:#00ffae;
+  font-weight:600;
+}
+
+/* TEAM */
+.team{
+  text-align:center;
+  margin-top:60px;
+  padding:0 15px;
+}
+
+.team h2{
+  margin-bottom:20px;
+}
+
+.team-row{
+  display:flex;
+  justify-content:center;
+  gap:30px;
+  flex-wrap:wrap;
+}
+
+.member{
+  text-align:center;
+}
+
+.member img{
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  border:2px solid #00ffae;
+}
+
+/* ABOUT */
+.about{
+  text-align:center;
+  max-width:90%;
+  margin:60px auto;
+  font-size:14px;
+  opacity:0.8;
+}
+
+/* CONTACT */
+.contact{
+  position:fixed;
+  bottom:15px;
+  right:15px;
+  font-size:12px;
+  background:#111;
+  padding:10px;
+  border-radius:10px;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  margin:40px 0;
+  opacity:0.4;
+  font-size:12px;
+}
+
+/* RESPONSIVE */
+@media(min-width:768px){
+  .hero h1{font-size:50px;}
+  .member img{width:90px;height:90px;}
+  .contact{font-size:13px;}
+}
+
+</style>
+
+<script>
+function goToBooking(){
+  fetch("/check-auth",{credentials:"include"})
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.user){
+      window.location.href="/book.html";
+    }else{
+      // alert("Login first ❌"); // this is alert looks ocword//
+      window.location.href="/user-login.html";
+    }
+  });
+}
+</script>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="navbar">
+  <div class="logo">AutoRide</div>
+  <div class="nav-buttons">
+    <button class="user-btn" onclick="location.href='user-login.html'">User</button>
+    <button class="admin-btn" onclick="location.href='admin-login.html'">Admin</button>
+    <button class="driver-btn" onclick="location.href='driver-login.html'">Driver</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Move Smart with <span>AutoRide 🚖</span></h1>
+  <p>Fast rides. Zero hassle.</p>
+</div>
+
+<!-- SEARCH -->
+<div class="search">
+  <input placeholder="📍 Pickup location">
+  <input placeholder="🏁 Drop location">
+  <button onclick="goToBooking()">Book Ride</button>
+</div>
+
+<!-- TEAM -->
+<div class="team">
+  <h2>Our Team</h2>
+  <div class="team-row">
+
+    <div class="member">
+      <img src="ceo.png">
+      <h3>SAHIL SHABIR LONE</h3>
+      <p>CEO</p>
+    </div>
+
+    <div class="member">
+      <img src="ceo.png">
+      <h3>LONE SAHIL</h3>
+      <p>Developer</p>
+    </div>
+
+    <div class="member">
+      <img src="https://i.pravatar.cc/100?img=3">
+      <h3>BLACK ALPHA</h3>
+      <p>Support</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ABOUT -->
+<div class="about">
+  <h2>About AutoRide</h2>
+  <p>
+    AutoRide is built to make daily travel simple, fast, and affordable for everyone.
+  </p>
+</div>
+
+<!-- CONTACT -->
+<div class="contact">
+  support@autoride.com<br>
+  +91 9541109375
+</div>
+
+<footer>
+  © 2026 All Rightes reserved 
+</footer>
+
+</body>
+</html>

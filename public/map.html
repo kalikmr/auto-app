@@ -1,0 +1,56 @@
+let map;
+
+async function loadMap() {
+  const res = await fetch("/accepted-rides", {
+    credentials: "include"
+  });
+
+  const rides = await res.json();
+
+  if (!rides.length) return;
+
+  const ride = rides[0];
+
+  const pickup = JSON.parse(ride.pickup);
+  const drop = JSON.parse(ride.drop);
+
+  // INIT MAP
+  map = L.map("map").setView([pickup.lat, pickup.lon], 13);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+
+  // MARKERS
+  L.marker([pickup.lat, pickup.lon])
+    .addTo(map)
+    .bindPopup("Pickup Location")
+    .openPopup();
+
+  L.marker([drop.lat, drop.lon])
+    .addTo(map)
+    .bindPopup("Drop Location");
+
+  // DRAW LINE
+  const route = [
+    [pickup.lat, pickup.lon],
+    [drop.lat, drop.lon]
+  ];
+
+  L.polyline(route, { color: "green" }).addTo(map);
+}
+
+loadMap();
+const navBtn = L.control({ position: "topright" });
+
+navBtn.onAdd = function () {
+  const div = L.DomUtil.create("div", "nav-btn");
+  div.innerHTML = `<button onclick="navigate()">Navigate</button>`;
+  return div;
+};
+
+navBtn.addTo(map);
+
+function navigate(){
+  window.open(`https://www.google.com/maps/dir/${pickupLat},${pickupLon}/${dropLat},${dropLon}`);
+}

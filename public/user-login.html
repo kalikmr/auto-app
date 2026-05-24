@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+body{
+  height:100vh;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:15px;
+}
+
+/* CARD */
+.box{
+  background:#1e293b;
+  padding:30px 25px;
+  border-radius:15px;
+  width:100%;
+  max-width:350px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  animation:fadeIn 0.8s ease;
+}
+
+h2{
+  margin-bottom:20px;
+  font-weight:600;
+}
+
+/* INPUT */
+.input-group{
+  position:relative;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:none;
+  outline:none;
+  background:#0f172a;
+  color:white;
+  font-size:14px;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:25px;
+  border:none;
+  background:#22c55e;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  background:#16a34a;
+  transform:scale(1.05);
+}
+
+/* SWITCH */
+.switch{
+  margin-top:15px;
+  font-size:14px;
+  color:#60a5fa;
+  cursor:pointer;
+}
+
+/* ANIMATION */
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(30px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+/* MOBILE */
+@media(max-width:400px){
+  .box{
+    padding:25px 15px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2 id="title">User Login</h2>
+
+  <input id="name" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="submitForm()">Continue</button>
+
+  <div class="switch" onclick="toggle()" id="switchText">
+    Create account
+  </div>
+</div>
+
+<script>
+let isLogin = true;
+
+function toggle() {
+  isLogin = !isLogin;
+
+  document.getElementById("title").innerText = isLogin ? "User Login" : "Create Account";
+
+  document.getElementById("switchText").innerText =
+    isLogin ? "Create account" : "Already have account?";
+}
+
+function submitForm() {
+
+  const name = document.getElementById("name").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!name || !password) {
+    alert("Enter all fields ⚠️");
+    return;
+  }
+
+  const url = isLogin ? "/user-login" : "/register";
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "include",
+    body: JSON.stringify({ name, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.success) {
+
+      if (isLogin) {
+        window.location.href = "book.html";
+      } else {
+        alert("Registered successfully ✅");
+        toggle(); // back to login
+      }
+
+    } else {
+      alert("Invalid credentials ❌");
+    }
+
+  })
+  .catch(() => {
+    alert("Server error ❌");
+  });
+
+}
+
+async function checkLogin() {
+
+  try {
+
+    const res = await fetch("/check-auth");
+
+    const data = await res.json();
+
+    if (data.user) {
+
+      window.location.href = "/book.html";
+
+    }
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+
+}
+
+checkLogin();
+
+</script>
+
+</body>
+</html>

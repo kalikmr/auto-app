@@ -1,0 +1,46 @@
+<h2>Welcome User 👤</h2>
+
+<input id="pickup" placeholder="Pickup">
+<input id="drop" placeholder="Drop">
+<button onclick="book()">Book Ride</button>
+
+<h3>My Rides 🚖</h3>
+<div id="data"></div>
+
+<script>
+const name = localStorage.getItem("user");
+
+// BOOK RIDE
+function book() {
+  fetch("/book", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      name,
+      pickup: document.getElementById("pickup").value,
+      drop: document.getElementById("drop").value
+    })
+  })
+  .then(() => load());
+}
+
+// LOAD RIDES
+function load() {
+  fetch("/myrides/" + name)
+    .then(res => res.json())
+    .then(data => {
+      let output = "";
+      data.forEach(r => {
+        output += `
+        <p>
+          ${r.pickup} ➝ ${r.drop} <br>
+          Status: <b>${r.status}</b><br>
+          Driver: ${r.driver || "Not assigned"}
+        </p><hr>`;
+      });
+      document.getElementById("data").innerHTML = output;
+    });
+}
+
+load();
+</script>

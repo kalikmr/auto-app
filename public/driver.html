@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Driver Dashboard</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: #020617;
+      color: white;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      padding: 16px 20px;
+
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .online {
+      background: #16a34a;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* CONTAINER */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 18px;
+    }
+
+    /* TOP GRID */
+    .top-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    /* STATS */
+    .stats-card {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+
+      border-radius: 22px;
+      padding: 20px;
+
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .stats-card h2 {
+      font-size: 15px;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    .stats-card h1 {
+      font-size: 30px;
+      font-weight: 700;
+    }
+
+    /* SECTION */
+    .section {
+      margin-top: 25px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    /* GRID */
+    .ride-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    /* CARD */
+    .card {
+      background: linear-gradient(145deg, #111827, #1e293b);
+
+      border-radius: 24px;
+      padding: 18px;
+
+      border: 1px solid rgba(255, 255, 255, 0.05);
+
+      transition: 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .ride-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .fare {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      padding: 8px 14px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status {
+      padding: 7px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pending {
+      background: rgba(234, 179, 8, 0.15);
+      color: #facc15;
+    }
+
+    .ongoing {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .completed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+
+    .location-box {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 12px;
+      border-radius: 14px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .location-title {
+      opacity: 0.6;
+      font-size: 12px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      width: 100%;
+      border: none;
+      padding: 13px;
+      margin-top: 10px;
+
+      border-radius: 14px;
+
+      font-size: 14px;
+      font-weight: 600;
+
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .accept {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
+    }
+
+    .start {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: black;
+    }
+
+    .complete {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: white;
+    }
+
+    .withdraw {
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      color: white;
+    }
+
+    .btn:hover {
+      transform: scale(1.02);
+    }
+
+    /* EMPTY */
+    .empty {
+      background: #111827;
+      padding: 20px;
+      border-radius: 18px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* MOBILE */
+    @media(max-width:700px) {
+
+      .header {
+        padding: 14px;
+      }
+
+      .logo {
+        font-size: 17px;
+      }
+
+      .online {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .stats-card h1 {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 18px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">🚖 Driver Dashboard</div>
+    <div class="online">🟢 Online</div>
+  </div>
+
+  <div class="container">
+
+    <!-- TOP STATS -->
+    <div class="top-grid">
+
+      <div class="stats-card">
+        <h2>Total Earnings</h2>
+        <h1 id="earnings">₹0</h1>
+      </div>
+
+      <div class="stats-card">
+        <h2>Today's Status</h2>
+        <h1>Active</h1>
+      </div>
+
+    </div>
+
+    <!-- WITHDRAW -->
+    <div class="section">
+      <div class="card">
+
+        <div class="ride-top">
+          <h3>💸 Withdraw Earnings</h3>
+        </div>
+
+        <p style="opacity:.7; font-size:14px;">
+          Withdraw your current wallet earnings instantly.
+        </p>
+
+        <button class="btn withdraw" onclick="withdrawAll()">
+          Withdraw All Earnings
+        </button>
+
+      </div>
+    </div>
+
+    <!-- AVAILABLE RIDES -->
+    <div class="section">
+
+      <div class="section-title">
+        🆕 Available Rides
+      </div>
+
+      <div id="rides" class="ride-grid"></div>
+
+    </div>
+
+    <!-- ACTIVE RIDES -->
+    <div class="section">
+
+      <div class="section-title">
+        📦 Active Rides
+      </div>
+
+      <div id="accepted" class="ride-grid"></div>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    // ================= EARNINGS =================
+    function loadEarnings() {
+
+      fetch("/driver-earnings", {
+        credentials: "include"
+      })
+        .then(res => res.json())
+        .then(data => {
+
+          document.getElementById("earnings").innerText =
+            "₹" + (data.earnings || 0);
+
+        });
+
+    }
+
+    // ================= AVAILABLE RIDES =================
+    function loadRides() {
+
+      fetch("/rides", {
+        credentials: "include"
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          let html = "";
+
+          if (!data.length) {
+
+            html = `
+            <div class="empty">
+              No rides available right now 🚖
+            </div>
+            `;
+
+          }
+
+          data.forEach(r => {
+
+            let p =
+  typeof r.pickup === "string"
+    ? JSON.parse(r.pickup)
+    : r.pickup;
+
+let d =
+  typeof r.drop === "string"
+    ? JSON.parse(r.drop)
+    : r.drop;
+
+            html += `
+
+            <div class="card">
+
+              <div class="ride-top">
+
+                <div class="fare">
+                  ₹${Math.round((r.fare || 0) * 0.8)}
+                </div>
+
+                <div class="status pending">
+                  Pending
+                </div>
+
+              </div>
+
+              <div class="location-box">
+                <div class="location-title">
+                  Pickup
+                </div>
+
+                📍 ${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}
+              </div>
+
+              <div class="location-box">
+                <div class="location-title">
+                  Drop
+                </div>
+
+                📍 ${d.lat.toFixed(3)}, ${d.lon.toFixed(3)}
+              </div>
+
+              <button class="btn accept"
+                onclick="acceptRide('${r._id}')">
+                Accept Ride
+              </button>
+
+            </div>
+
+            `;
+
+          });
+
+          document.getElementById("rides").innerHTML = html;
+
+        });
+
+    }
+
+    // ================= ACCEPT =================
+    function acceptRide(id) {
+
+      fetch("/driver-accept/" + id, {
+        method: "POST",
+        credentials: "include"
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          if (data.success) {
+
+            loadRides();
+            loadAccepted();
+
+          } else {
+
+            alert(data.message || "Ride already taken ❌");
+
+          }
+
+        });
+
+    }
+
+    // ================= ACTIVE RIDES =================
+    function loadAccepted() {
+
+      fetch("/accepted-rides", {
+        credentials: "include"
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          let html = "";
+
+          if (!data.length) {
+
+            html = `
+            <div class="empty">
+              No active rides 📦
+            </div>
+            `;
+
+          }
+
+          data.forEach(r => {
+
+  let p =
+  typeof r.pickup === "string"
+    ? JSON.parse(r.pickup)
+    : r.pickup;
+
+let d =
+  typeof r.drop === "string"
+    ? JSON.parse(r.drop)
+    : r.drop;
+  html += `
+
+  <div class="card">
+
+    <div class="ride-top">
+
+      <div class="fare">
+        ₹${r.fare || 0}
+      </div>
+
+      <div class="status ${r.status === "Ongoing"
+        ? "ongoing"
+        : "pending"}">
+
+        ${r.status === "Ongoing"
+          ? "🚗 Ride Started"
+          : "⏳ Accepted"}
+
+      </div>
+
+    </div>
+
+    <div class="location-box">
+      <div class="location-title">Pickup Location</div>
+
+      📍 ${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}
+    </div>
+
+    <div class="location-box">
+      <div class="location-title">Drop Location</div>
+
+      📍 ${d.lat.toFixed(3)}, ${d.lon.toFixed(3)}
+    </div>
+
+    ${r.status === "Accepted"
+      ? `
+
+      <button class="btn pickup-btn"
+        onclick="openPickupMap(${p.lat}, ${p.lon})">
+
+        📍 Open Pickup Navigation
+
+      </button>
+
+      <button class="btn otp-btn"
+        onclick="startRide('${r._id}')">
+
+        🔐 Verify OTP & Start Ride
+
+      </button>
+
+      `
+      : ""
+    }
+
+    ${r.status === "Ongoing"
+      ? `
+
+      <button class="btn drop-btn"
+        onclick="openDropMap(${d.lat}, ${d.lon})">
+
+        🧭 Open Drop Navigation
+
+      </button>
+
+      <button class="btn complete-btn"
+        onclick="completeRide('${r._id}')">
+
+        ✅ Complete Ride
+
+      </button>
+
+      `
+      : ""
+    }
+
+  </div>
+
+  `;
+
+});
+
+          document.getElementById("accepted").innerHTML = html;
+
+        });
+
+    }
+///
+
+    // ================= START =================
+    function startRide(id) {
+
+      const otp = prompt("Enter customer OTP");
+
+      if (!otp) return;
+
+      fetch("/start-ride/" + id, {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({ otp })
+
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          if (data.success) {
+
+            alert("🚗 Ride Started");
+
+            loadAccepted();
+
+          } else {
+
+            alert("Wrong OTP ❌");
+
+          }
+
+        });
+
+    }
+
+    // ================= COMPLETE =================
+    function completeRide(id) {
+
+      fetch("/complete/" + id, {
+        method: "POST"
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          if (data.success) {
+
+            alert("🎉 Ride Completed");
+
+            loadAccepted();
+            loadRides();
+            loadEarnings();
+
+          } else {
+
+            alert("Pickup first ❌");
+
+          }
+
+        });
+
+    }
+
+    // ================= WITHDRAW =================
+    function withdrawAll() {
+
+      fetch("/withdraw-all", {
+
+        method: "POST",
+        credentials: "include"
+
+      })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+          alert(data.message);
+
+          if (data.success) {
+
+            loadEarnings();
+
+          }
+
+        });
+
+    }
+function openPickupMap(lat, lon) {
+
+  window.open(
+    `https://www.google.com/maps?q=${lat},${lon}`,
+    "_blank"
+  );
+
+}
+
+function openDropMap(lat, lon) {
+
+  window.open(
+    `https://www.google.com/maps?q=${lat},${lon}`,
+    "_blank"
+  );
+
+}
+function updateLocation() {
+
+  navigator.geolocation.getCurrentPosition((pos) => {
+
+    fetch("/update-driver-location", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      credentials: "include",
+
+      body: JSON.stringify({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude
+      })
+
+    });
+
+  });
+
+}
+ 
+
+
+// ================= AUTO LOAD =================
+    loadRides();
+    updateLocation();
+    loadAccepted();
+    loadEarnings();
+    setInterval(updateLocation, 10000);
+    setInterval(loadRides, 4000);
+    setInterval(loadAccepted, 4000);
+    setInterval(loadEarnings, 4000);
+
+  </script>
+
+</body>
+
+</html>

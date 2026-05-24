@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Earnings Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  padding:15px;
+}
+.card {
+  background:#1e293b;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:10px;
+}
+button {
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#3b82f6;
+  color:white;
+  margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<button onclick="back()">⬅ Back</button>
+
+<h2>💰 Earnings Dashboard</h2>
+
+<div id="data"></div>
+
+<script>
+
+function back() {
+  window.location.href = "/admin.html";
+}
+
+function load() {
+  fetch("/admin-earnings", {
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(d => {
+
+    let html = `
+    <div class="card">
+      Total Revenue: ₹${d.totalRevenue || 0}<br>
+      Admin Earnings: ₹${d.adminEarning || 0}<br>
+      Total Rides: ${d.totalRides || 0}
+💸 Pay Driver
+</button>
+    </div>
+    `;
+
+    html += "<h3>Driver Earnings</h3>";
+
+    if (!d.drivers || d.drivers.length === 0) {
+      html += "<p>No completed rides yet</p>";
+    } else {
+      d.drivers.forEach(x => {
+        html += `
+        <div class="card">
+          👨‍✈️ ${x.name}<br>
+          🚗 Rides: ${x.rides || x.rideCount || x.totalRides || 0}<br>
+          💰 Earnings: ₹${x.earnings}
+          <br>
+          🧾 Last Paid: ₹${x.lastPayout || 0}<br><br>
+          <button onclick="payDriver('${x.phone}')">
+      💸 Pay Driver
+    </button>
+        </div>
+        `;
+      });
+    }
+
+    document.getElementById("data").innerHTML = html;
+  })
+  .catch(() => {
+    document.getElementById("data").innerHTML = "Server error ❌";
+  });
+}
+function payDriver(phone) {
+
+  if (!confirm("Pay this driver?")) return;
+
+  fetch("/pay-driver/" + phone, {
+    method: "POST",
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.success) {
+      alert("Paid ✅");
+      load(); // reload dashboard
+    } else {
+      alert("Error ❌");
+    }
+
+  });
+}
+load();
+setInterval(load, 5000);
+
+</script>
+
+</body>
+</html>

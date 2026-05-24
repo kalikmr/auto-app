@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Book Ride</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+}
+
+.header {
+  background: black;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 500px;
+  margin: auto;
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 30px;
+  background: black;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+button:hover {
+  background: #333;
+}
+
+#map {
+  height: 250px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.ride {
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border-left: 5px solid black;
+}
+
+.status {
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.pending { color: orange; }
+.accepted { color: green; }
+.completed { color: blue; }
+
+.small {
+  font-size: 12px;
+  color: #666;
+}
+.logout-btn{
+  background:red;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:10px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+<button class="logout-btn" onclick="logout()">
+  Logout
+</button>
+<div class="header">🚖 Book Ride</div>
+
+<div class="container">
+
+  <div class="card">
+    <h3>Where to go?</h3>
+
+    <input id="pickup" class="input" placeholder="Pickup (auto)" readonly>
+    <input id="drop" class="input" placeholder="Tap map to select drop" readonly>
+
+    <button onclick="getLocation()">📍 Use My Location</button>
+
+    <div id="map"></div>
+      <div id="fareBox"
+  style="font-size:20px; font-weight:bold; color:green; margin-top:10px;">
+  Select locations to see fare
+      </div>
+    <button onclick="payNow()">💳 Pay & Book Ride</button>
+  </div>
+
+  <div class="card">
+    <h3>Your Rides</h3>
+    <div id="rides"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+let pickupCoords = null;
+let dropCoords = null;
+
+let map = L.map('map').setView([34.0837, 74.7973], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(map);
+
+let marker;
+
+// 🚗 LIVE DRIVER
+let driverMarker = null;
+let trackingInterval = null;
+let activeRideId = null;
+
+// =====================
+// 📍 GET LOCATION
+// =====================
+function getLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    pickupCoords = {
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude
+    };
+
+    document.getElementById("pickup").value =
+      `📍 ${pickupCoords.lat.toFixed(5)}, ${pickupCoords.lon.toFixed(5)}`;
+
+  }, () => alert("Location denied ❌"));
+}
+
+// =====================
+// 📌 DROP SELECT
+// =====================
+
+map.on("click", (e) => {
+
+  dropCoords = {
+    lat: e.latlng.lat,
+    lon: e.latlng.lng
+  };
+
+  document.getElementById("drop").value =
+    `📌 ${dropCoords.lat.toFixed(5)}, ${dropCoords.lon.toFixed(5)}`;
+
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([dropCoords.lat, dropCoords.lon]).addTo(map);
+  showFare();
+});
+
+// =====================
+
+// =====================
+// 🚗 DRIVER TRACKING
+// =====================
+function trackDriver(rideId) {
+
+  fetch(`/track/${rideId}`, {
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (!data.lat || !data.lon) return;
+
+    const lat = data.lat;
+    const lon = data.lon;
+
+    if (!driverMarker) {
+      driverMarker = L.marker([lat, lon])
+        .addTo(map)
+        .bindPopup("🚗 Driver Live")
+        .openPopup();
+    } else {
+      driverMarker.setLatLng([lat, lon]);
+    }
+
+    map.setView([lat, lon], map.getZoom());
+  });
+}
+
+// =====================
+// 📦 LOAD RIDES
+// =====================
+function loadRides() {
+
+  fetch("/myrides", {
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    let html = "";
+
+    if (!data || data.length === 0) {
+
+      document.getElementById("rides").innerHTML =
+        "<p>No rides yet 🚖</p>";
+
+      return;
+    }
+
+    data.forEach(r => {
+
+      let p =
+        typeof r.pickup === "string"
+          ? JSON.parse(r.pickup)
+          : r.pickup;
+
+      let d =
+        typeof r.drop === "string"
+          ? JSON.parse(r.drop)
+          : r.drop;
+
+      let statusClass =
+        r.status === "Pending"
+          ? "pending"
+          : r.status === "Accepted"
+          ? "accepted"
+          : "completed";
+
+      html += `
+      <div class="ride">
+
+        <b>📍 Pickup:</b>
+        ${p.lat.toFixed(3)},
+        ${p.lon.toFixed(3)}<br>
+
+        <b>🏁 Drop:</b>
+        ${d.lat.toFixed(3)},
+        ${d.lon.toFixed(3)}<br>
+
+        <div class="small">
+          Driver:
+          ${r.driverName || "Searching..."}
+        </div>
+
+        <div class="status ${statusClass}">
+          ${r.status}
+        </div>
+
+        ${
+          r.driver
+          ? `
+          <button onclick="trackDriver('${r._id}')">
+            📍 Track Driver
+          </button>
+          `
+          : ""
+        }
+
+        <br>
+
+        🔐 OTP:
+        <span class="otp">
+          ${r.otp || "----"}
+        </span>
+
+      </div>
+      `;
+
+      // AUTO TRACK
+      if (r.status === "Accepted") {
+
+        if (activeRideId !== r._id) {
+
+          activeRideId = r._id;
+
+          if (trackingInterval) {
+            clearInterval(trackingInterval);
+          }
+
+          trackingInterval = setInterval(() => {
+            trackDriver(r._id);
+          }, 3000);
+
+        }
+      }
+
+    });
+
+    document.getElementById("rides").innerHTML = html;
+
+  })
+  .catch(err => {
+
+    console.log(err);
+
+    document.getElementById("rides").innerHTML =
+      "Error loading rides ❌";
+
+  });
+
+}
+
+// =====================
+// 🔁 AUTO REFRESH
+// =====================
+loadRides();
+setInterval(loadRides, 5000);
+function cancelRide(id) {
+
+  fetch("/cancel-ride/" + id, {
+    method: "POST",
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.success) {
+      alert("Ride cancelled ✅");
+      loadRides();
+    } else {
+      alert(data.message || "Cannot cancel ❌");
+    }
+
+  });
+
+}
+async function showFare() {
+
+  if (!pickupCoords || !dropCoords) return;
+
+  const res = await fetch("/calculate-fare", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      pickup: pickupCoords,
+      drop: dropCoords
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    document.getElementById("fareBox").innerText =
+      "💰 Estimated Fare: ₹" + data.fare;
+  }
+}
+let paying = false;
+
+async function payNow() {
+
+  if (paying) return;
+  paying = true;
+
+  if (!pickupCoords || !dropCoords) {
+    alert("Select pickup & drop first");
+    paying = false;
+    return;
+  }
+
+  try {
+
+    // 🔥 STEP 1: create order
+    const res = await fetch("/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        pickup: pickupCoords,
+        drop: dropCoords
+      })
+    });
+
+    const order = await res.json();
+
+    if (!order.id) {
+      alert("Order failed ❌");
+      paying = false;
+      return;
+    }
+
+    // 🔥 STEP 2: Razorpay open
+    const options = {
+  key: "rzp_live_Sfj6rj8w9e1Tcm",
+  amount: order.amount,
+  currency: "INR",
+  order_id: order.id,
+  handler: async function (response) {
+
+        // 🔥 STEP 3: verify payment
+        const verify = await fetch("/verify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(response) // 👈 IMPORTANT
+        });
+
+        const result = await verify.json();
+
+        paying = false;
+
+        if (result.success) {
+          alert("Ride Booked ✅");
+          loadRides();
+        } else {
+          alert("Payment verification failed ❌");
+        }
+      },
+
+      modal: {
+        ondismiss: function () {
+          paying = false;
+          alert("Payment cancelled ❌");
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    paying = false;
+    console.log(err);
+    alert("Something went wrong ❌");
+  }
+}
+
+async function logout() {
+
+  await fetch("/logout");
+
+  window.location.href = "/user-login.html";
+
+}
+
+async function trackDriver(id) {
+
+  const res = await fetch("/driver-location/" + id);
+
+  const data = await res.json();
+
+  if (!data.success) {
+
+    alert("Driver location unavailable");
+
+    return;
+
+  }
+
+  window.open(
+
+    `https://www.google.com/maps?q=${data.lat},${data.lon}`,
+
+    "_blank"
+
+  );
+
+}
+</script>
+
+</body>
+</html>

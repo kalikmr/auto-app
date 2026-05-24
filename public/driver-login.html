@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Driver Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+}
+
+.box {
+  background: #1e293b;
+  padding: 25px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+h2 {
+  margin-bottom: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #16a34a;
+}
+
+.link {
+  margin-top: 10px;
+  color: #60a5fa;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>🚖 Driver Login</h2>
+
+  <!-- ✅ IMPORTANT: phone id -->
+  <input type="text" id="phone" placeholder="Phone Number">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <!-- ✅ REGISTER BUTTON BACK -->
+  <div class="link" onclick="goRegister()">
+    New Driver? Register here
+  </div>
+</div>
+
+<script>
+
+function login() {
+
+  const phone = document.getElementById("phone").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!phone || !password) {
+    alert("Fill all fields ❌");
+    return;
+  }
+
+  fetch("/driver-login", {
+    method: "POST",
+    credentials: "include", // 🔥 VERY IMPORTANT
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ phone, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.success) {
+      alert("Login Success ✅");
+      window.location.href = "driver.html";
+    } else {
+      alert("Invalid OR Not Approved ❌");
+    }
+
+  })
+  .catch(() => {
+    alert("Server error ❌");
+  });
+}
+
+function goRegister() {
+  window.location.href = "driver-register.html";
+}
+
+</script>
+
+</body>
+</html>

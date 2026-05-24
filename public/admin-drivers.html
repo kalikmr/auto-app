@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Driver Approval</title>
+</head>
+
+<body style="font-family:Arial;background:#111;color:white">
+
+<h2>🚖 Driver Approval</h2>
+
+<div id="drivers"></div>
+
+<script>
+
+function loadDrivers() {
+
+  fetch("/drivers", { credentials: "include" })
+  .then(res => res.json())
+  .then(data => {
+
+    let html = "";
+
+    data.forEach(d => {
+
+      html += `
+      <div style="border:1px solid gray;padding:10px;margin:10px">
+        <b>${d.name}</b><br>
+        📱 ${d.phone}<br>
+        🆔 Aadhar: ${d.aadhar}<br>
+        🪪 PAN: ${d.pan}<br>
+
+        Status: ${d.approved ? "✅ Approved" : "⏳ Pending"}
+
+        ${!d.approved ? `<br><button onclick="approve('${d._id}')">Approve</button>` : ""}
+      </div>
+      `;
+    });
+
+    document.getElementById("drivers").innerHTML = html;
+
+  });
+}
+
+function approve(id) {
+
+  fetch("/approve-driver/" + id, {
+    method: "POST",
+    credentials: "include"
+  })
+  .then(() => {
+    alert("Approved ✅");
+    loadDrivers();
+  });
+}
+
+loadDrivers();
+
+</script>
+
+</body>
+</html>
